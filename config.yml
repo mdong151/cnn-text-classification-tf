@@ -3,7 +3,7 @@ word_embeddings:
   # Just set the default to empty string to disable the word embeddings
   default: word2vec
   word2vec:
-    path: ../../data/GoogleNews-vectors-negative300.bin
+    path: ../../data/input/word_embeddings/GoogleNews-vectors-negative300.bin
     dimension: 300
     binary: True
   glove:
@@ -49,7 +49,7 @@ datasets:
     # https://archive.ics.uci.edu/ml/datasets/Sentence+Classification
     # has been used. The dataset includes following 3 domains:
     # arxiv, jdm and plos
-    container_path: ../../data/SentenceCorpus
+    container_path: ../../data/input/SentenceCorpus
     categories:
     shuffle: True
     random_state: 42

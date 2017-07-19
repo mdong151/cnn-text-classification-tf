@@ -9,6 +9,7 @@ import data_helpers
 from text_cnn import TextCNN
 from tensorflow.contrib import learn
 import yaml
+import math
 
 # Parameters
 # ==================================================
@@ -112,7 +113,7 @@ with tf.Graph().as_default():
 
         # Define Training procedure
         global_step = tf.Variable(0, name="global_step", trainable=False)
-        optimizer = tf.train.AdamOptimizer(1e-3)
+        optimizer = tf.train.AdamOptimizer(cnn.learning_rate)
         grads_and_vars = optimizer.compute_gradients(cnn.loss)
         train_op = optimizer.apply_gradients(grads_and_vars, global_step=global_step)
 
@@ -176,20 +177,22 @@ with tf.Graph().as_default():
                 print("glove file has been loaded\n")
             sess.run(cnn.W.assign(initW))
 
-        def train_step(x_batch, y_batch):
+        def train_step(x_batch, y_batch, learning_rate):
             """
             A single training step
             """
             feed_dict = {
               cnn.input_x: x_batch,
               cnn.input_y: y_batch,
-              cnn.dropout_keep_prob: FLAGS.dropout_keep_prob
+              cnn.dropout_keep_prob: FLAGS.dropout_keep_prob,
+              cnn.learning_rate: learning_rate
             }
             _, step, summaries, loss, accuracy = sess.run(
                 [train_op, global_step, train_summary_op, cnn.loss, cnn.accuracy],
                 feed_dict)
             time_str = datetime.datetime.now().isoformat()
-            print("{}: step {}, loss {:g}, acc {:g}".format(time_str, step, loss, accuracy))
+            print("{}: step {}, loss {:g}, acc {:g}, learning_rate {:g}"
+                  .format(time_str, step, loss, accuracy, learning_rate))
             train_summary_writer.add_summary(summaries, step)
 
         def dev_step(x_batch, y_batch, writer=None):
@@ -212,10 +215,18 @@ with tf.Graph().as_default():
         # Generate batches
         batches = data_helpers.batch_iter(
             list(zip(x_train, y_train)), FLAGS.batch_size, FLAGS.num_epochs)
+        # It uses dynamic learning rate with a high value at the beginning to speed up the training
+        # learning rate decay
+        max_learning_rate = 0.003
+        min_learning_rate = 0.0001
+        decay_speed = 5*len(y_train)/FLAGS.batch_size
         # Training loop. For each batch...
+        counter = 0
         for batch in batches:
+            learning_rate = min_learning_rate + (max_learning_rate - min_learning_rate) * math.exp(-counter/decay_speed)
+            counter += 1
             x_batch, y_batch = zip(*batch)
-            train_step(x_batch, y_batch)
+            train_step(x_batch, y_batch, learning_rate)
             current_step = tf.train.global_step(sess, global_step)
             if current_step % FLAGS.evaluate_every == 0:
                 print("\nEvaluation:")
