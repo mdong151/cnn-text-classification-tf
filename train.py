@@ -216,7 +216,6 @@ with tf.Graph().as_default():
         batches = data_helpers.batch_iter(
             list(zip(x_train, y_train)), FLAGS.batch_size, FLAGS.num_epochs)
         # It uses dynamic learning rate with a high value at the beginning to speed up the training
-        # learning rate decay
         max_learning_rate = 0.003
         min_learning_rate = 0.0001
         decay_speed = 5*len(y_train)/FLAGS.batch_size
