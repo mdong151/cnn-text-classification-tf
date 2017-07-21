@@ -34,6 +34,7 @@ tf.flags.DEFINE_integer("num_checkpoints", 5, "Number of checkpoints to store (d
 # Misc Parameters
 tf.flags.DEFINE_boolean("allow_soft_placement", True, "Allow device soft device placement")
 tf.flags.DEFINE_boolean("log_device_placement", False, "Log placement of ops on devices")
+tf.flags.DEFINE_float("decay_coefficient", 2.5, "Decay coefficient (default: 2.5)")
 
 FLAGS = tf.flags.FLAGS
 FLAGS._parse_flags()
@@ -216,9 +217,9 @@ with tf.Graph().as_default():
         batches = data_helpers.batch_iter(
             list(zip(x_train, y_train)), FLAGS.batch_size, FLAGS.num_epochs)
         # It uses dynamic learning rate with a high value at the beginning to speed up the training
-        max_learning_rate = 0.003
+        max_learning_rate = 0.005
         min_learning_rate = 0.0001
-        decay_speed = 5*len(y_train)/FLAGS.batch_size
+        decay_speed = FLAGS.decay_coefficient*len(y_train)/FLAGS.batch_size
         # Training loop. For each batch...
         counter = 0
         for batch in batches:
